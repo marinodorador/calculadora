@@ -1,0 +1,149 @@
+<project name="integra2" default="build" >
+  <!-- root directory of this project -->
+  <property name="project.dir" value="."/>
+  <!-- main class to run -->
+  <property name="main.class" value="app.HelloWorld"/>
+  <!-- root directory of Scala installation -->
+  <property name="scala.home"
+    value="C:\Program Files (x86)\scala"/>
+  <!-- location of scalatest.jar for unit testing -->
+ <!-- <property name="scalatest.jar"
+    value="C:\\Program Files\\...\\scalatest-1.0.jar"/>-->
+
+  <target name="init">
+
+    <!-- derived path names -->
+    <property name="build.dir" value="${project.dir}/build"/>
+    <property name="source.dir" value="${project.dir}/src"/>
+    <property name="test.dir" value="${project.dir}/test"/>
+
+    <!-- scala libraries for classpath definitions -->
+    <property name="scala-library.jar"
+      value="${scala.home}\\lib\\scala-library.jar"/>
+    <property name="scala-compiler.jar"
+      value="${scala.home}\\lib\\scala-compiler.jar"/>
+  	<property name="scala-reflect.jar"
+  	      value="${scala.home}\\lib\\scala-reflect.jar"/>
+    <!-- classpath for the compiler task definition -->
+    <path id="scala.classpath">
+      <pathelement location="${scala-compiler.jar}"/>
+      <pathelement location="${scala-library.jar}"/>
+      <pathelement location="${scala-reflect.jar}"/>
+	</path>
+  	<!-- path for project build -->
+    <path id="build.classpath">
+      <pathelement location="${scala-library.jar}"/>
+      <fileset dir="${project.dir}/lib">
+        <include name="*.jar"/>
+   	  </fileset>
+      <pathelement location="${build.dir}/classes"/>
+    </path>
+    <!-- classpath for unit test build  -->
+    <path id="test.classpath">
+      <pathelement location="${scala-library.jar}"/>
+      <pathelement location="${scalatest.jar}"/>
+      <pathelement location="${build.dir}/classes"/>
+  	</path>
+    <!-- definition for the "scalac" and
+      "scaladoc" ant tasks -->
+    <taskdef resource="scala/tools/ant/antlib.xml">
+      <classpath refid="scala.classpath"></classpath>
+	</taskdef>
+    <!-- definition for the "scalatest" ant task -->
+    <!--<taskdef classname="org.scalatest.tools.ScalaTestTask"" name="scalatest">
+      <classpath refid="test.classpath"></classpath>
+  	</taskdef>-->
+</target>
+  <!-- delete compiled files -->
+  <target depends="init" description="clean" name="clean">
+    <delete dir="${build.dir}"/>
+    <delete dir="${project.dir}/doc"/>
+    <delete file="${project.dir}/lib/scala-library.jar/"></delete>
+  </target>
+  <!-- compile project -->
+  <target depends="init" description="build" name="build">
+    <buildnumber/>
+    <tstamp/>
+    <mkdir dir="${build.dir}/classes"/>
+    <scalac classpathref="build.classpath" deprecation="on"
+       destdir="${build.dir}/classes"
+       force="never" srcdir="${source.dir}">
+      <include name="**/*.scala">
+    </include>
+  </scalac>
+    	</target>
+  <!-- run program -->
+  <!-- <target depends="build" description="run" name="run">
+    <java classname="${main.class}" classpathref="build.classpath">
+  </java>
+  	</target>-->
+  <!-- build unit tests -->
+  <!-- <target depends="build" name="buildtest">
+    <mkdir dir="${build.dir}/test"/>
+    <scalac classpathref="test.classpath" deprecation="on"
+      destdir="${build.dir}/test" force="never" srcdir="${test.dir}">
+      <include name="**/*.scala">
+    </include>
+  </scalac>
+  	</target>-->
+  <!-- run unit tests -->
+  <!--<target depends="buildtest" description="test" name="test">
+    <scalatest runpath="${build.dir}/test"/>
+      <reporter config="YFABRT" type="stdout">
+      <membersonly package="suite">
+      	 <reporter type="graphic" config="YFABRT"/> 
+     	  <suite classname="suite.TestSuite"/> 
+      </membersonly>
+  		</reporter>
+   </target>
+   -->
+  <!-- create a startable *.jar with proper
+    classpath dependency definition -->
+  <target depends="build" description="jar" name="jar">
+    <mkdir dir="${build.dir}/jar"/>
+    <copy file="${scala-library.jar}" todir="${project.dir}/lib"/>
+    <path id="jar.class.path"/>
+       <fileset dir="${project.dir}">
+         <include name="lib/**/*.jar">
+       </include>
+    </fileset>
+    <pathconvert dirsep="/" pathsep=" " property="jar.classpath">
+      <path refid="jar.class.path"></path>
+      <map from="${basedir}${file.separator}lib" to="lib">
+    </map></pathconvert>
+    <jar basedir="${build.dir}/classes"
+      destfile="${build.dir}/jar/${ant.project.name}.jar"
+      duplicate="preserve">
+      <manifest>
+	        <attribute name="Main-Class" value="${main.class}"/>
+	        <attribute name="Class-Path" value="${jar.classpath}"/>
+	        <section name="Program">
+	          <attribute name="Title" value="${ant.project.name}"/>
+	          <attribute name="Build" value="${build.number}"/>
+	          <attribute name="Date" value="${TODAY}"/>
+	  		</section>
+     </manifest>
+    </jar>
+  </target>
+  <!-- create API documentation in doc folder -->
+  <target depends="build" description="scaladoc"
+    name="scaladoc">
+    <mkdir dir="${project.dir}/doc"/>
+    <scaladoc classpathref="build.classpath"
+      destdir="${project.dir}/doc"
+      doctitle="${ant.project.name}" srcdir="${source.dir}"
+      windowtitle="${ant.project.name}">
+  </scaladoc>
+	</target>
+  <!-- create a zip file with binaries for distribution -->
+  <target depends="jar, scaladoc"
+    description="package" name="package">
+    <zip destfile="${build.dir}/${ant.project.name}.zip">
+      <zipfileset dir="${build.dir}/jar" includes="${ant.project.name}.jar"/>
+      <zipfileset dir="${project.dir}" includes="lib/*"/>
+      <zipfileset dir="${project.dir}" includes="doc/*"/>
+      <zipfileset dir="${project.dir}/txt" includes="*"/>
+    </zip>
+  </target>
+
+</project>
